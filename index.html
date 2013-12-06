@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Rack-linkeddata : Rack middleware for Linked Data content negotiation." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Rack-linkeddata</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ruby-rdf/rack-linkeddata">View on GitHub</a>
+
+          <h1 id="project_title">Rack-linkeddata</h1>
+          <h2 id="project_tagline">Rack middleware for Linked Data content negotiation.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ruby-rdf/rack-linkeddata/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ruby-rdf/rack-linkeddata/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="linked-data-content-negotiation-for-rack-applications" class="anchor" href="#linked-data-content-negotiation-for-rack-applications"><span class="octicon octicon-link"></span></a>Linked Data Content Negotiation for Rack Applications</h1>
+
+<p>This is <a href="http://rack.github.com/">Rack</a> middleware that provides <a href="http://linkeddata.org/">Linked Data</a> content
+negotiation for Rack applications. You can use <code>Rack::LinkedData</code> with any
+Ruby web framework based on Rack, including with Ruby on Rails 3.0 and with
+Sinatra.</p>
+
+<ul>
+<li><a href="http://github.com/datagraph/rack-linkeddata">http://github.com/datagraph/rack-linkeddata</a></li>
+</ul><p><a href="http://badge.fury.io/rb/rack-linkeddata"><img src="https://badge.fury.io/rb/rack-linkeddata.png" alt="Gem Version"></a>
+<a href="http://travis-ci.org/ruby-rdf/rack-linkeddata"><img src="https://travis-ci.org/ruby-rdf/rack-linkeddata.png?branch=master" alt="Build Status"></a></p>
+
+<h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Implements <a href="http://en.wikipedia.org/wiki/Content_negotiation">HTTP content negotiation</a> for RDF content types.</li>
+<li>Supports all <a href="http://ruby-rdf.github.com/rdf/">RDF.rb</a>-compatible serialization formats.</li>
+<li>Compatible with any Rack application and any Rack-based framework.</li>
+</ul><h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<h3>
+<a name="adding-linked-data-content-negotiation-to-a-rails-3x-application" class="anchor" href="#adding-linked-data-content-negotiation-to-a-rails-3x-application"><span class="octicon octicon-link"></span></a>Adding Linked Data content negotiation to a Rails 3.x application</h3>
+
+<pre><code># config/application.rb
+require 'rack/linkeddata'
+
+class Application &lt; Rails::Application
+  config.middleware.use Rack::LinkedData::ContentNegotiation
+end
+</code></pre>
+
+<h3>
+<a name="adding-linked-data-content-negotiation-to-a-sinatra-application" class="anchor" href="#adding-linked-data-content-negotiation-to-a-sinatra-application"><span class="octicon octicon-link"></span></a>Adding Linked Data content negotiation to a Sinatra application</h3>
+
+<pre><code>#!/usr/bin/env ruby -rubygems
+require 'sinatra'
+require 'rack/linkeddata'
+
+use Rack::LinkedData::ContentNegotiation
+
+get '/hello' do
+  RDF::Graph.new do |graph|
+    graph &lt;&lt; [RDF::Node.new, RDF::DC.title, "Hello, world!"]
+  end
+end
+</code></pre>
+
+<h3>
+<a name="adding-linked-data-content-negotiation-to-a-rackup-application" class="anchor" href="#adding-linked-data-content-negotiation-to-a-rackup-application"><span class="octicon octicon-link"></span></a>Adding Linked Data content negotiation to a Rackup application</h3>
+
+<pre><code>#!/usr/bin/env rackup
+require 'rack/linkeddata'
+
+rdf = RDF::Graph.new do |graph|
+  graph &lt;&lt; [RDF::Node.new, RDF::DC.title, "Hello, world!"]
+end
+
+use Rack::LinkedData::ContentNegotiation
+run lambda { |env| [200, {}, rdf] }
+</code></pre>
+
+<h3>
+<a name="defining-a-default-linked-data-content-type" class="anchor" href="#defining-a-default-linked-data-content-type"><span class="octicon octicon-link"></span></a>Defining a default Linked Data content type</h3>
+
+<pre><code>use Rack::LinkedData::ContentNegotiation, :default =&gt; "text/turtle"
+</code></pre>
+
+<p>Options are also passed to the writer, which can allow options to be shared among the application
+and different components.</p>
+
+<pre><code>shared_options = {:default =&gt; "text/turtle", :standard_prefixes =&gt; true, }
+use Rack::LinkedData::ContentNegotiation, shared_options
+run MyApplication, shared_options
+</code></pre>
+
+<h3>
+<a name="testing-linked-data-content-negotiation-using-rackup-and-curl" class="anchor" href="#testing-linked-data-content-negotiation-using-rackup-and-curl"><span class="octicon octicon-link"></span></a>Testing Linked Data content negotiation using <code>rackup</code> and <code>curl</code>
+</h3>
+
+<pre><code>$ rackup doc/examples/hello.ru
+
+$ curl -iH "Accept: text/plain" http://localhost:9292/hello
+$ curl -iH "Accept: text/turtle" http://localhost:9292/hello
+$ curl -iH "Accept: application/rdf+xml" http://localhost:9292/hello
+$ curl -iH "Accept: application/json" http://localhost:9292/hello
+$ curl -iH "Accept: application/trix" http://localhost:9292/hello
+$ curl -iH "Accept: */*" http://localhost:9292/hello
+</code></pre>
+
+<h2>
+<a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h2>
+
+<p><code>Rack::LinkedData</code> implements content negotiation for any <a href="http://rack.github.com/">Rack</a> response
+object that implements the <code>RDF::Enumerable</code> mixin. You would typically
+return an instance of <code>RDF::Graph</code> or <code>RDF::Repository</code> from your Rack
+application, and let the <code>Rack::LinkedData::ContentNegotiation</code> middleware
+take care of serializing your response into whatever RDF format the HTTP
+client requested and understands.</p>
+
+<p>The middleware queries <a href="http://ruby-rdf.github.com/rdf/">RDF.rb</a> for the MIME content types of known RDF
+serialization formats, so it will work with whatever serialization plugins
+that are currently available for RDF.rb. (At present, this includes support
+for N-Triples, N-Quads, Turtle, RDF/XML, RDF/JSON, JSON-LD, RDFa, TriG and TriX.)</p>
+
+<h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<p><a href="http://http://rubydoc.info/github/ruby-rdf/rack-linkeddata/">http://http://rubydoc.info/github/ruby-rdf/rack-linkeddata/</a></p>
+
+<ul>
+<li>{Rack::LinkedData}
+
+<ul>
+<li>{Rack::LinkedData::ContentNegotiation}</li>
+</ul>
+</li>
+</ul><h2>
+<a name="dependencies" class="anchor" href="#dependencies"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<ul>
+<li>
+<a href="http://rubygems.org/gems/rack">Rack</a> (&gt;= 1.5.2)</li>
+<li>
+<a href="http://rubygems.org/gems/linkeddata">Linked Data</a> (&gt;= 1.1)</li>
+</ul><h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>The recommended installation method is via <a href="http://rubygems.org/">RubyGems</a>.
+To install the latest official release of the gem, do:</p>
+
+<pre><code>% [sudo] gem install rack-linkeddata
+</code></pre>
+
+<h2>
+<a name="download" class="anchor" href="#download"><span class="octicon octicon-link"></span></a>Download</h2>
+
+<p>To get a local working copy of the development repository, do:</p>
+
+<pre><code>% git clone git://github.com/ruby-rdf/rack-linkeddata.git
+</code></pre>
+
+<p>Alternatively, download the latest development version as a tarball as
+follows:</p>
+
+<pre><code>% wget http://github.com/ruby-rdf/rack-linkeddata/tarball/master
+</code></pre>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>This repository uses <a href="https://github.com/nvie/gitflow">Git Flow</a> to mange development and release activity. All submissions <em>must</em> be on a feature branch based on the <em>develop</em> branch to ease staging and integration.</p>
+
+<ul>
+<li>Do your best to adhere to the existing coding conventions and idioms.</li>
+<li>Don't use hard tabs, and don't leave trailing whitespace on any line.</li>
+<li>Do document every method you add using <a href="http://yardoc.org/">YARD</a> annotations. Read the
+<a href="http://rubydoc.info/docs/yard/file/docs/GettingStarted.md">tutorial</a> or just look at the existing code for examples.</li>
+<li>Don't touch the <code>.gemspec</code>, <code>VERSION</code> or <code>AUTHORS</code> files. If you need to
+change them, do so on your private branch only.</li>
+<li>Do feel free to add yourself to the <code>CREDITS</code> file and the corresponding
+list in the the <code>README</code>. Alphabetical order applies.</li>
+<li>Do note that in order for us to merge any non-trivial changes (as a rule
+of thumb, additions larger than about 15 lines of code), we need an
+explicit <a href="http://unlicense.org/#unlicensing-contributions">public domain dedication</a> on record from you.</li>
+</ul><h2>
+<a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
+
+<ul>
+<li><a href="http://www.w3.org/DesignIssues/LinkedData.html">http://www.w3.org/DesignIssues/LinkedData.html</a></li>
+<li><a href="http://linkeddata.org/docs/how-to-publish">http://linkeddata.org/docs/how-to-publish</a></li>
+<li><a href="http://linkeddata.org/conneg-303-redirect-code-samples">http://linkeddata.org/conneg-303-redirect-code-samples</a></li>
+<li><a href="http://www.w3.org/TR/cooluris/">http://www.w3.org/TR/cooluris/</a></li>
+<li><a href="http://www.w3.org/TR/swbp-vocab-pub/">http://www.w3.org/TR/swbp-vocab-pub/</a></li>
+<li><a href="http://patterns.dataincubator.org/book/publishing-patterns.html">http://patterns.dataincubator.org/book/publishing-patterns.html</a></li>
+</ul><h2>
+<a name="authors" class="anchor" href="#authors"><span class="octicon octicon-link"></span></a>Authors</h2>
+
+<ul>
+<li>
+<a href="http://github.com/bendiken">Arto Bendiken</a> - <a href="http://ar.to/">http://ar.to/</a>
+</li>
+<li>
+<a href="http://github.com/gkellogg">Gregg Kellogg</a> - <a href="http://greggkellogg.net/">http://greggkellogg.net/</a>
+</li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>This is free and unencumbered public domain software. For more information,
+see <a href="http://unlicense.org/">http://unlicense.org/</a> or the accompanying {file:UNLICENSE} file.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Rack-linkeddata maintained by <a href="https://github.com/ruby-rdf">ruby-rdf</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
